@@ -1,0 +1,155 @@
+Learned strategy example
+
+
+win_1(A,B):-win_1_1_1(A,B),won(B).
+win_1_1_1(A,B):-move(A,B),won(B).
+
+State A is won at depth 1 if there exists a move from A to B such that B is won.
+In the example below, O creates a vertical line.
+
+ O |   | X	     O |   | X
+-----------         -----------
+   | X |	     O | X |
+-----------         -----------
+ O | X | O	     O | X | O
+
+     A		         B
+
+
+win_2(A,B):-win_2_1_1(A,B),not(win_2_1_1(B,C)).
+win_2_1_1(A,B):-move(A,B),not(win_1(B,C)).
+
+State A is won at depth 2 if there exists a move of the current player from A to B such that
+  - B is not immediately won for the opponent
+  - the opponent cannot make a move from B to C to prevent the current player from immediately winning.
+In the example below, O makes a move which prevents the opponent from immediately winning (there are no two Xs aligned with an empty square in B), and which creates a double attack: there are two threats in B (bottom horizontal line and left vertical line). The opponent can not block them both which ensure that O can immediately win in the next move.
+
+ O |   | X	        O |   | X
+-----------	       -----------
+   | X |	          | X |
+-----------	       -----------
+   |   | O		O |   | O
+
+     A			    B
+
+
+win_3(A,B):-win_3_1_1(A,B),not(win_3_1_1(B,C)).
+win_3_1_1(A,B):-win_2_1_1(A,B),not(win_2(B,C)).
+
+State A is won at depth 3 for the current player if there exists a move from A to B such that 
+ - B is not won for the opponent in 1 or 2 moves
+ - the opponent cannot make a move from B to C to prevent the current player from winning in 1 or 2 moves.
+ 
+ In the example below, O makes a move such that X can not immediately win (there are no alignment of two Xs and an empty square in B), nor win in two moves (X can not execute a double attack a presented above). This move forces the opponent to play next middle, and therefore leaves an opportunity for O to lead a double attack in the next move.
+
+ O |   | X		O |   | X
+-----------            -----------
+   |   |                  |   |
+-----------            -----------
+   |   |	          |   | O
+ 
+     A			    B
+
+
+More rules of this form can be learned for a game of larger depth. For example, MIGO also learns the rules below when playing Hexapawn4:
+
+win_4(A,B):-win_4_1_1(A,B),not win_4_1_1(B,C).
+win_4_1_1(A,B):-win_3_1_1(A,B),not win_3(B,C).
+
+win_5(A,B):-win_5_1_1(A,B),not win_5_1_1(B,C).
+win_5_1_1(A,B):-win_4_1_1(A,B),not win_4(B,C).
+
+win_6(A,B):-win_6_1_1(A,B),not win_6_1_1(B,C).
+win_6_1_1(A,B):-win_5_1_1(A,B),not win_5(B,C).
+
+Similarly, these predicates define maintenance of minimax win k-ply when moving from position A to B.
+
+
+The rules for draw/2 are presented below.
+
+draw_1(A,B):-draw_1_1_3(A,B),not(win_1(B,C)).
+draw_1_1_3(A,B):-move(A,B),not(win_1(B,C)).
+
+State A is drawn at depth 1 for the current player if there exists a move from A to B such that B is not immediately won for the opponent.
+In both of the examples below, the opponent can not immediately win from B; the current player blocks any immadiate threats (eg: diagonal on second example).
+
+ O | X | O		  O | X | O
+-----------              -----------
+ X | O |	          X | O | O
+-----------              -----------
+ X | O | X	          X | O | X
+ 
+     A	                      B
+     
+ O | X | O	       	  O | X | O
+-----------	         -----------
+ X | O |	          X | O | 
+-----------		 -----------
+   | O | X	          X | O | X
+ 
+     A			      B
+
+draw_2(A,B):-draw_2_1_1(A,B),not(win_1(B,C)).
+draw_2_1_1(A,B):-draw_1(A,B),not(win_1(B,C)).
+
+State A is drawn at depth 2 for the current player if there exists a move from A to B such that B is not immediately won for the opponent.
+In both of the examples below, the opponent can not immediately win from B; the current player blocks any immadiate threats.
+
+ O | X | O		   O | X | O
+-----------		  -----------
+ X |   |	           X | O |
+-----------		  -----------
+   | O | X	             | O | X
+ 
+     A		               B
+
+ O | X | O		   O | X | O
+-----------		  -----------
+   |   |	           X |   |
+-----------	          -----------
+   | O | X	             | O | X
+ 
+     A			       B
+
+
+draw_3(A,B):-draw_3_1_10(A,B),not(draw_1_1_12(B,C)).
+draw_3_1_10(A,B):-draw_2(A,B),not(draw_1_1_12(B,C)).
+
+State A is drawn at depth 3 for the current player if there exists a move from A to B such that B is not won at depth 1 or 2 for the opponent.
+In both of the examples below, the opponent can not immediately win from B; the current player blocks any threats in one or two moves.
+In the second example, X prevents O from leading a double attack.
+
+ O | X |  		    O | X | O
+-----------		   -----------
+   |   |	              |   |
+-----------                -----------
+   | O | X	              | O | X
+ 
+     A			        B
+     
+ O |   |  		    O | X | 
+-----------		   -----------
+   |   |	              |   |
+-----------		   -----------
+   | O | X	              | O | X
+ 
+     A			        B
+
+draw_4(A,B):-draw_4_1_2(A,B),not(draw_1_1_12(B,C)).
+draw_4_1_2(A,B):-draw_3(A,B),not(draw_1_1_12(B,C)).
+
+State A is drawn at depth 4 for the current player if there exists a move from A to B such that B is not won at depth 1 or 2 for the opponent.
+
+In the examples below, the opponent can not immediately win from B; the current player blocks any threats in one or two moves.
+
+   |   |  		      O |   | 
+-----------		     -----------
+   |   |	 	        |   |
+-----------		     -----------
+   | O | X	                | O | X
+ 
+     A			 	  B
+
+Similar rules can be learned for a game with larger depth. For example, MIGO additionnally learns the following rules when playing Hexapawn4:
+
+However, because the framework learns from positive examples only, these rules are over-general. We will extend MIGO to include a more thourough framework for learning from positive examples only.
