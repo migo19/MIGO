@@ -13,7 +13,7 @@ beads([white, lilac, silver, black, gold, green, amber, red, pink]).
 
 
 %% move of Menace
-move(C,M,B1,B2):-
+move_menace(C,M,B1,B2):-
     mark(M),
     beads(Colors),
     nth0(I,Colors,C),
@@ -27,7 +27,7 @@ play_menace(_,M,B1,B2,Bead):-
     length(I,1),!,
     I = [I1],
     switch(B1,I1,M,B2),
-    move(Bead,M,B1,B2),
+    move_menace(Bead,M,B1,B2),
     retractall(board(_)),
     asserta(board(B2)),
     retractall(bead(_)),
@@ -38,7 +38,7 @@ play_menace(S,M,B1,B2,Bead):-
     empty_positions(B1,I),
     \+(length(I,1)),!,
     ((draw_bead(S,B1,Bead),
-    move(Bead,M,B1,B2))->
+    move_menace(Bead,M,B1,B2))->
         (retractall(board(_)),
         asserta(board(B2)),
         retractall(bead(_)),
@@ -46,13 +46,13 @@ play_menace(S,M,B1,B2,Bead):-
         (Bead = no)).
 
 draw_bead(S,Board,B):-
-    ((find_box(S,Board,Box,Beads,_,Transformation));
+    ((find_box(S,Board,_,Beads,_,Transformation));
     (equivalent_(Board,Box),equivalent(Board,Box,Transformation),
     initial_beads(Box,Beads))),
     beads(C),
     transform(C,C1,Transformation),
     extend(C1,Beads,L),
-    random_member(L,B).
+    random_member(B,L).
 
 initial_beads(Box,Beads):-
     playing(P),
@@ -69,7 +69,7 @@ reduced_indexes(Board,I1,I2):-
     findall(B2,(member(I,I1),switch(Board,I,M,B2)),Boards),
     reduced_indexes_(Boards,I1,I2).
 reduced_indexes_([],[],[]).
-reduced_indexes_([B|Bs],[I1|I1s],I2):-
+reduced_indexes_([B|Bs],[_|I1s],I2):-
     member(B1,Bs),
     equivalent(B1,B,_),
     reduced_indexes_(Bs,I1s,I2).
@@ -80,17 +80,17 @@ reduced_indexes_([B|Bs],[I|I1s],[I|I2s]):-
 
 %% update the number of Beads at the end of a game
 update_beads([],[],_).
-update_beads([B1],[],_).
+update_beads([_],[],_).
 %% no box if there is only one position left
-update_beads([B1,B2],[Color1],Outcome):-
-    move(Color1,o,B1,B2),
+update_beads([B1,B2],[Color1],_):-
+    move_menace(Color1,o,B1,B2),
     empty_positions(B1,I),
     length(I,1),!.
 update_beads([B1,B2],[Color1],Outcome):-
-    move(Color1,o,B1,B2),
+    move_menace(Color1,o,B1,B2),
     update_beads_(B1,Color1,Outcome).
-update_beads([B1,B2|RestGame],[Color1,Color2|Colors],Outcome):-
-    move(Color1,o,B1,B2),
+update_beads([B1,B2|RestGame],[Color1,_|Colors],Outcome):-
+    move_menace(Color1,o,B1,B2),
     update_beads_(B1,Color1,Outcome),
     update_beads(RestGame,Colors,Outcome).
 update_beads_(Board,Color,Outcome):-
@@ -162,7 +162,7 @@ menace_(N):-
     menace_(N1).
 
 assert_last_strategy:-
-    findall(Box,(box(current,Box,Beads,C)),Boxes),
+    findall(Box,(box(current,Box,_,_)),Boxes),
     assert_last(Boxes).
 
 assert_last([]) :-!.

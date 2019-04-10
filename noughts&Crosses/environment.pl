@@ -28,17 +28,18 @@ reset :-
     retractall(playing(_)),
     retractall(strategy(_)).
 
-initialisation_game :-
-    set_rand,
-    initial_board(B),
+initialisation_game(B) :-
     asserta(board(B)),
     asserta(playing(1)),!.
 
 game(S1,S2,Game,Colors,Outcome) :-
-    reset,
-    initialisation_game,!,
-    play(S1,S2,Game1,Outcome,Colors),
     initial_board(B),
+    game(B,S1,S2,Game,Colors,Outcome).
+
+game(B,S1,S2,Game,Colors,Outcome):-
+    reset,
+    initialisation_game(B),!,
+    play(S1,S2,Game1,Outcome,Colors),
     append([B],Game1,Game).
 
 %% play against menace
@@ -46,7 +47,7 @@ make_move(current,M,B,B2,Bead):-play_menace(current,M,B,B2,Bead).
 make_move(last,M,B,B2,Bead):-play_menace(last,M,B,B2,Bead).
 
 %% play with optimal strategy = minimax algorithm
-make_move(minimax,M,B,B2,none):- !,
+make_move(minimax,_,B,B2,none):- !,
     board_to_list(B,L),
     next_pos(L,L2,_,_),
     list_to_board(L2,B2),!,
@@ -57,14 +58,14 @@ make_move(minimax,M,B,B2,none):- !,
 %% play with random strategy
 make_move(random,M,B,B2,none):-
     findall(s(M1,_,B1),(move(s(M,_,B),s(M1,_,B1))),Ps),!,
-    random_member(Ps,s(M1,_,B2)),
+    random_member(s(M1,_,B2),Ps),
     retractall(board(_)),
     asserta(board(B2)),
     asserta(bead(none)).
 
 %% play with a strategy described by a logic program LP
 make_move(learned_strategy,o,B1,B2,none) :-
-    ((execute_strategy(s(o,_,B1),LP,s(x,_,B2)))->
+    ((execute_strategy(s(o,_,B1),_,s(x,_,B2)))->
     (asserta(bead(none)),
     retract(board(_)),
     asserta(board(B2)));

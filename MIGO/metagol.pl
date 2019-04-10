@@ -30,7 +30,8 @@ default(metarule_next_id(1)).
 default(max_inv_preds(10)).
 
 learn(Pos1,Neg1):-
-    learn(Pos1,Neg1,Prog).
+    learn(Pos1,Neg1,Prog),
+    pprint(Prog).
 
 learn(Pos1,Neg1,Prog):-
     maplist(atom_to_list,Pos1,Pos2),
@@ -89,7 +90,7 @@ prove_aux('@'(Atom),_FullSig,_Sig,_MaxN,N,N,Prog,Prog):-!,
     user:call(Atom).
 
 
-prove_aux(p(prim,P,_A,Args,[not,[P2|Args2]],_Path),FullSig,Sig1,MaxN,N,N,Prog,Prog):-
+prove_aux(p(prim,P,_A,_Args,[not,[P2|Args2]],_Path),_FullSig,_Sig1,_,N,N,Prog,Prog):-
     \+(var(P)), P = not,
     length(Args2,A),!,
     user:prim(P2/A), \+(user:primcall(P2,Args2)).

@@ -1,8 +1,8 @@
 set_rand:-
     sleep(1),
-    datime(datime(_,_Month,_Day,_H,Minute,Second)),
-    X is Minute * Second+1,Y=X,Z=X,
-    setrand(rand(X,Y,Z)).
+    get_time(X),
+    U is floor(X),
+    set_random(seed(U)).
 
 replicate(X,N,L) :-
     findall(X,between(1,N,_),L).
@@ -44,12 +44,6 @@ extend2([(E,N,_)|T],L):-
     replicate(E,N,L1),
     append(L1,T2,L).
 
-random_member([], []).
-random_member(List, Elt) :-
-    length(List, Length),
-    random(0, Length, Index),
-    nth0(Index, List, Elt).
-
 copy(B,B) :- !.
 
 get_last(L1,L2,Last):-
@@ -57,5 +51,5 @@ get_last(L1,L2,Last):-
     append(L2,[Last],L1).
 
 even(0).
-odd(X) :- succ(X1,X), even(X1).
 even(X) :- succ(X1,X), odd(X1).
+odd(X) :- succ(X1,X), even(X1).

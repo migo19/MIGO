@@ -5,47 +5,42 @@
 
 
 %% first learn win/2 then learn draw/2
-dependent_learning(N,Sw,Sd):-
+dependent_learning(Sw,Sd):-
     tasks(K1,K2),
-    one_shot_learning_aux(win,1,K1,N,Primw,Invw,Gw),!,
-    one_shot_learning_aux(draw,1,K2,N,Primd,Invd,Gd),!,
-    retractall(Primw,Invw,Gw),
-    retractall(Primd,Invd,Gd),
-    append(Invw,Gw,Sw1),
-    flatten(Sw1,Sw),
-    append(Invd,Gd,Sd1),
-    flatten(Sd1,Sd).
+    one_shot_learning_aux(win,1,K1,Primw,Invw,Gw),!,
+    one_shot_learning_aux(draw,1,K2,Primd,Invd,Gd),!,
+    retractall(Primw,Invw,Gw,Sw),
+    retractall(Primd,Invd,Gd,Sd).
 
-retractall(Prim,Inv,G):-
+retractall(Prim,Inv,G,S):-
     flatten(Prim,Prim2),
     retractall_prim(Prim2),
     append(Inv,G,All),
-    flatten(All,All1),
-    retract_program(All1).
+    flatten(All,S),
+    retract_program(S).
 
 %% for each depth first perform one-shot learning then learn a general predicate for win_i/draw_i
-one_shot_learning_aux(_,_,1,_,[],[],[]):-!.
-one_shot_learning_aux(Name,M,M,N,[],[],[]).
-one_shot_learning_aux(Name,M1,M,N,[Prim3|Prim],[Prog1|Prog],[G|G1]):-
+one_shot_learning_aux(_,_,1,[],[],[]):-!.
+one_shot_learning_aux(_,M,M,[],[],[]).
+one_shot_learning_aux(Name,M1,M,[Prim3|Prim],[Prog1|Prog],[G|G1]):-
     newpred(Name,P,M1),
     episode(P,Pos,Neg,_),
     append(Pos,Neg,All),
-    one_shot_learning_(Name,All,M1,1,N,Prim1,Prog1),!,
+    one_shot_learning_(Name,All,M1,1,Prim1,Prog1),!,
     learn_task(Pos/Neg,G),
     find_prims(G,Prim2),
     append(Prim1,Prim2,Prim3),
     M2 is M1+1,
-    one_shot_learning_aux(Name,M2,M,N,Prim,Prog,G1).
+    one_shot_learning_aux(Name,M2,M,Prim,Prog,G1).
 
-one_shot_learning_(_,[],_,_,_,[],[]) :-!.
-one_shot_learning_(_,_,_,N,N,[],[]) :-!.
-one_shot_learning_(Name,All,K,M,N,[Prim|Prims],[Prog|Prog1]):-
+one_shot_learning_(_,[],_,_,[],[]) :-!.
+one_shot_learning_(Name,All,K,M,[Prim|Prims],[Prog|Prog1]):-
     one_shot_learning1(Name,All,K,Rest,M,Progs,Prim),
     flatten(Progs,Prog),
     maplist(assert_clause,Prog),
     assert_prog_prims(Prog),
     M1 is M+1,
-    one_shot_learning_(Name,Rest,K,M1,N,Prims,Prog1).
+    one_shot_learning_(Name,Rest,K,M1,Prims,Prog1).
 
 %% one-shot learning: learn a rule from single example
 %% remove examples that are covered by this rule
@@ -86,14 +81,14 @@ tasks(K1,K3):-
     tasks(draw,1,K2),
     K3 is min(K1,K2).
 
-tasks(Name,N1,N1) :- depth_game(N),N1 is N-1.
+tasks(_,N1,N1) :- depth_game(N),N1 is N-1.
 tasks(Name,N,M):-
     newpred(Name,Ep2,N),
-    episode(Ep2,Pos,Neg,BK),
+    episode(Ep2,Pos,_,_),
     \+(Pos = []),!,
     N1 is N+1,
     tasks(Name,N1,M).
-tasks(Name,M,M):- !.
+tasks(_,M,M):- !.
 
 %% check whether two programs are equivalent
 prog_equivalent([],[],1) :- !.
@@ -103,7 +98,7 @@ prog_equivalent(_,_,0).
 %% rename predicates in a program
 rename_predicates([],[]) :- !,fail.
 rename_predicates(LP1,LP2):-
-    findall(P/A1,(member(sub(_,P,A1,_,_),LP1),\+(member(sub(_,P,A,_,_),LP2))),Preds1),
+    findall(P/A1,(member(sub(_,P,A1,_,_),LP1),\+(member(sub(_,P,_,_,_),LP2))),Preds1),
     findall(P/A1,(member(sub(_,P,A1,_,_),LP2),\+(member(sub(_,P,A1,_,_),LP1))),Preds2),
     match(Preds1,Preds2,Matches),
     rename_predicates(LP1,Matches,LP2).
@@ -119,7 +114,7 @@ match(L,Preds1,Preds2,[P/A-P1/A1|Matches]):-
     match(L1,Preds11,Preds22,Matches).
 
 rename_predicates(LP,[],LP).
-rename_predicates(LP1,[P/A-P1/A1|Rest],LP2) :-
+rename_predicates(LP1,[P/A-P1/A|Rest],LP2) :-
     replace_prog(P/A,P1/A,LP1,LP3),
     rename_predicates(LP3,Rest,LP2).
 

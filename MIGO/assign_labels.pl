@@ -2,6 +2,7 @@
 %%%%% EPISODES AND LABELING
 
 :- dynamic(episode/4).
+:- discontiguous update_exs/4.
 
 episode(win_1,[],[],[]). episode(win_2,[],[],[]).
 episode(win_3,[],[],[]). episode(win_4,[],[],[]).
@@ -16,11 +17,11 @@ episode(draw_7,[],[],[]). episode(draw_8,[],[],[]).
 %% if won for the learner, every move of the learner can be a positive example for the task of winning
 %% practically, all moves that fail a call to win/2 are added to the training set
 %% only valid if the counter is smaller than ref_counter for separated learning
-update_exs([B1|Seq],M,Sw,Sd) :-
+update_exs([B1|Seq],M,Sw,_) :-
     ((learning(mixed));(counter(C),ref_counter(C1),C<C1)),
     mark(learner,M),
     depth([B1|Seq],Depth),
-    assert_prog_and_prims(Sw),assert_win(Sw),
+    assert_prog_and_prims(Sw),assert_win,
     ((\+(win_pos(Depth,Sw,s(M,M,B1))))->
     (retract_prog_and_prims(Sw),retract_win,
     update_exs_pos([B1|Seq]));
@@ -46,8 +47,8 @@ update_exs_pos([B1,B2|Game]):-
 %% only valid if the counter is greater than ref_counter for separated learning
 update_exs([B1|Seq],d,Sw,Sd) :-
     ((learning(mixed));(counter(C), ref_counter(C1), C>=C1)),
-    assert_prog_and_prims(Sw),assert_win(Sw),
-    assert_prog_and_prims(Sd),assert_draw(Sd),
+    assert_prog_and_prims(Sw),assert_win,
+    assert_prog_and_prims(Sd),assert_draw,
     depth([B1|Seq],Depth),
     mark(learner,M),
     ((\+(win_pos(Depth,Sw,s(M,d,B1))),\+(draw_pos(Depth,Sd,s(M,d,B1))))->
@@ -75,13 +76,13 @@ update_ex(Ex,positive,P) :-
     retract(episode(P,Pos,Neg,BK)),
     assert(episode(P,[Ex|Pos],Neg,BK)),!.
 update_ex(Ex,positive,P) :-
-    episode(P,Pos,Neg,BK),
+    episode(P,Pos,_,_),
     member(Ex,Pos),!.
 
 %% reclassify draw position with respect to the updated winning strategy for mixed learning
 update_draw_moves(_,1) :- !.
 update_draw_moves(Sw,0) :-
-    assert_prog_and_prims(Sw),assert_win(Sw),
+    assert_prog_and_prims(Sw),assert_win,
     depth_game(D),
     update_draw_moves_(1,Sw,D),
     retract_prog_and_prims(Sw),retract_win.
@@ -104,11 +105,10 @@ update_pos(M,Sw,[Ex|Pos],Pos1):-
 update_pos(M,Sw,[Ex|Pos],[Ex|Pos1]):-
     update_pos(M,Sw,Pos,Pos1).
 
-
 %% check whether a board is a winning position with respect to the current strategy
 win_pos(M,Sw,S1):-
     between(1,M,N),
-    newpred(win,P,M),
+    newpred(win,P,N),
     member(sub(_,P,2,_,_),Sw),
     call(P,S1,_).
 

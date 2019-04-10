@@ -60,7 +60,7 @@ drawn(s(M,_,B)) :- moves_left(s(M,_,B),0), \+(won(s(M,_,B))).
 % win classifier
 won(s(M,_,B)) :- next_mark(M,M1),won_(M1,s(M,_,B)).
 
-won_(X,s(Y,_,B)) :- line(L), forall(inline(U,L),arg(U,B,X)).
+won_(X,s(_,_,B)) :- line(L), forall(inline(U,L),arg(U,B,X)).
 
 % representation
 space :- write(' ').

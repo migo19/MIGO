@@ -40,19 +40,17 @@ board_to_state(B,M2,s(x,M2,B)):- toplayX(s(_,M2,B)),!.
 board_to_list(B,L):-
     findall(M,(pos(P),arg(P,B,M)),L),!.
 
-toplay(s(M,_,B),M).
-
 list_to_board(L1,B):-
     append([b],L1,L),
     B =.. L.
 
 %% update the counter if the winning strategy is stable otherwise reset it
-update_counter(_,Sw):- counter(C),ref_counter(C1),C>C1,!.
-update_counter(0,Sw):-
+update_counter(_,_):- counter(C),ref_counter(C1),C>C1,!.
+update_counter(0,_):-
     retractall(counter(_)),
     asserta(counter(0)).
 update_counter(1,[]) :- !.
-update_counter(1,Sw):-
+update_counter(1,_):-
     counter(C),
     retractall(counter(_)),
     C1 is C+1,

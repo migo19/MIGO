@@ -2,7 +2,6 @@
 :- user:use_module(library(lists)).
 :- use_module(library(lists)).
 :- use_module(library(random)).
-:- use_module(library(timeout)).
 :- use_module(library(system)).
 
 :- [assign_labels].
@@ -14,7 +13,7 @@
 %% ---------- METARULES ----------
 
 metarule([P,R,Q],([P,A,B]:-[[R,A,B],[Q,B]])).
-metarule([P,R,not,Q],([P,A,B]:-[[R,A,B],[not,[Q,B,C]]])).
+metarule([P,R,not,Q],([P,A,B]:-[[R,A,B],[not,[Q,B,_]]])).
 
 %% ---------- METAGOL SETTINGS ----------
 
